@@ -54,6 +54,22 @@ input[type="file"] {
   height: 100%;
 }
 
+#hydraStage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  transition: opacity 220ms ease;
+}
+
+.hydra-active #hydraStage {
+  opacity: 1;
+}
+
 .topbar {
   position: absolute;
   top: 26px;

@@ -1,5 +1,8 @@
 const canvas = document.querySelector("#stage");
 const ctx = canvas.getContext("2d", { alpha: false });
+const hydraCanvas = document.createElement("canvas");
+hydraCanvas.id = "hydraStage";
+canvas.insertAdjacentElement("afterend", hydraCanvas);
 const shell = document.querySelector(".shell");
 const controlPanel = document.querySelector(".control-panel");
 const dragHandle = document.querySelector("#dragHandle");
@@ -103,6 +106,7 @@ const cameraWorkCanvas = document.createElement("canvas");
 const cameraWorkCtx = cameraWorkCanvas.getContext("2d", { willReadFrequently: true });
 const templateStorageKey = "xindongOS.templates.v1";
 const panelPositionKey = "xindongOS.panelPosition.v1";
+let hydraSynth = null;
 
 function resize() {
   state.dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -156,6 +160,44 @@ function restorePanelPosition() {
 function toggleStageMode() {
   const active = shell.classList.toggle("stage-mode");
   stageModeButton.textContent = active ? "打开编辑" : "演出模式";
+}
+
+function initHydra() {
+  if (hydraSynth || !window.Hydra) return hydraSynth;
+  hydraCanvas.width = window.innerWidth;
+  hydraCanvas.height = window.innerHeight;
+  hydraSynth = new window.Hydra({
+    canvas: hydraCanvas,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    detectAudio: false,
+    enableStreamCapture: false,
+    makeGlobal: true,
+  });
+  hydraSynth.eval('solid(0,0,0,0).out()');
+  return hydraSynth;
+}
+
+function resizeHydra() {
+  if (!hydraSynth) return;
+  hydraSynth.synth.setResolution(window.innerWidth, window.innerHeight);
+}
+
+function runHydraCode(code) {
+  const synth = initHydra();
+  if (!synth) {
+    codeStatus.textContent = "Hydra 没有加载成功";
+    return false;
+  }
+  synth.eval(code);
+  shell.classList.add("hydra-active");
+  enterCustomMode("Hydra VJ 自定义创作");
+  return true;
+}
+
+function stopHydra() {
+  if (hydraSynth) hydraSynth.synth.hush();
+  shell.classList.remove("hydra-active");
 }
 
 function setTheme(theme) {
@@ -273,6 +315,15 @@ function captureIntent() {
 function parseNaturalVisual(text) {
   const prompt = text.toLowerCase();
   const intent = {};
+  if (/hydra|vj|现场|酷|迷幻|视频合成|反馈|feedback|glitch|故障/.test(prompt)) {
+    const fast = /快|强|炸|激烈|rave|hard|现场/.test(prompt);
+    const soft = /空灵|慢|柔|梦|冥想/.test(prompt);
+    intent.hydraNative = soft
+      ? 'gradient(1).hue(() => time * 0.04).modulate(osc(12, 0.03), 0.15).blend(noise(2).colorama(0.2), 0.28).out()'
+      : fast
+        ? 'osc(34, 0.04, 0.9).kaleid(8).modulateRotate(shape(4).repeat(6, 4), 0.22).diff(noise(3).posterize(4)).out()'
+        : 'voronoi(7, 0.35, 0.1).kaleid(7).modulate(osc(12, 0.08), 0.18).blend(osc(18).color(0.1,0.8,1), 0.35).out()';
+  }
   if (/空灵|仙|漂浮|呼吸|冥想|aether|ethereal/.test(prompt)) {
     intent.style = "aura";
     intent.theme = "aether";
@@ -398,6 +449,7 @@ function parseHydraChain(code) {
 }
 
 function codeFromIntent(intent) {
+  if (intent.hydraNative) return intent.hydraNative;
   const source = intent.source || (intent.style === "crystal" ? "shape" : intent.style === "veil" ? "noise" : intent.style === "pulse" ? "feedback" : "osc");
   if (source === "camera") {
     return `src("camera").pulse().color("cyan").kaleid(${intent.kaleid || 5}).rotate(${intent.rotation || 0.18}).contrast(${intent.contrast || 1.65}).glow(${intent.glow || 90}).speed(${intent.speed || 88}).density(${intent.density || 360}).blend("aura", 0.28).modulate("pulse", 0.42).out()`;
@@ -1392,6 +1444,14 @@ promptButton.addEventListener("click", async () => {
 
 codeRunButton.addEventListener("click", () => {
   try {
+    if (runHydraCode(hydraCode.value)) {
+      codeStatus.textContent = "真实 Hydra VJ 已运行";
+      return;
+    }
+  } catch (error) {
+    codeStatus.textContent = "Hydra 原生不支持该写法，已尝试 xindongOS 渲染";
+  }
+  try {
     const intent = parseHydraChain(hydraCode.value);
     intent.custom = true;
     applyIntent(intent);
@@ -1416,24 +1476,23 @@ codeAiButton.addEventListener("click", async () => {
 });
 
 const hydraExamples = [
-  'osc(18).kaleid(6).aura().color("aether").glow(92).speed(38).out()',
-  'shape(5).crystal().color("violet").kaleid(9).rotate(0.4).glow(86).speed(96).out()',
-  'noise(22).veil().color("cyan").density(500).glow(98).speed(24).out()',
-  'osc(30).pulse().color("lime").kaleid(4).contrast(1.8).speed(118).out()',
-  'gradient(12).silk().color("amber").glow(88).speed(46).density(280).out()',
-  'feedback(34).pulse().color("magenta").kaleid(10).rotate(0.62).contrast(2.1).glow(96).speed(132).density(500).out()',
-  'voronoi(28).crystal().color("violet").kaleid(12).rotate(0.36).contrast(1.9).glow(94).speed(108).density(460).out()',
-  'src("image").aura().color("image").kaleid(7).rotate(0.12).contrast(1.35).glow(94).speed(52).density(360).out()',
-  'src("camera").pulse().color("cyan").kaleid(5).rotate(0.18).contrast(1.65).glow(90).speed(88).density(360).blend("aura", 0.28).modulate("pulse", 0.42).out()',
+  'osc(18, 0.08, 0.8).kaleid(6).rotate(() => time * 0.12).modulate(noise(3), 0.18).color(0.2, 0.9, 1.0).out()',
+  'shape(5, 0.35, 0.02).repeat(4, 3).rotate(() => time * 0.2).modulate(osc(12), 0.08).color(1, 0.2, 0.85).out()',
+  'noise(4, 0.22).colorama(0.3).posterize(4, 0.6).modulate(osc(9, 0.1), 0.22).out()',
+  'voronoi(8, 0.45, 0.12).kaleid(9).modulate(noise(2), 0.35).color(0.55, 0.4, 1).out()',
+  'gradient(1).hue(() => time * 0.05).modulate(osc(16, 0.04), 0.18).blend(osc(8).kaleid(5), 0.45).out()',
+  'osc(30, 0.03, 0.9).modulateRotate(shape(3).repeat(5, 5), 0.18).diff(noise(2).posterize(3)).out()',
 ];
 let exampleIndex = 0;
 exampleButton.addEventListener("click", () => {
   exampleIndex = (exampleIndex + 1) % hydraExamples.length;
   hydraCode.value = hydraExamples[exampleIndex];
-  const intent = parseHydraChain(hydraCode.value);
-  intent.custom = true;
-  applyIntent(intent);
-  codeStatus.textContent = "酷效果已生成并应用";
+  try {
+    runHydraCode(hydraCode.value);
+    codeStatus.textContent = "真实 Hydra 酷效果已运行";
+  } catch (error) {
+    codeStatus.textContent = "Hydra 运行失败，请换一个效果";
+  }
 });
 
 saveTemplateButton.addEventListener("click", saveCurrentTemplate);
@@ -1468,6 +1527,7 @@ window.addEventListener("message", (event) => {
 });
 
 window.addEventListener("resize", resize);
+window.addEventListener("resize", resizeHydra);
 window.addEventListener("resize", restorePanelPosition);
 resize();
 restorePanelPosition();
