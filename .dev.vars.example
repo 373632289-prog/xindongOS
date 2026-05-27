@@ -1,0 +1,4 @@
+MODEL_PROVIDER=google
+MODEL_API_URL=https://agentllm.linkyun.co/v1beta/google
+MODEL_API_KEY=replace-with-your-server-side-key
+MODEL_NAME=nano-banana-pro-preview
