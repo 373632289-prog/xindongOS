@@ -81,6 +81,8 @@ MODEL_NAME=nano-banana-pro-preview
 
 ## 本地运行
 
+静态预览：
+
 ```bash
 python3 -m http.server 4273
 ```
@@ -89,6 +91,21 @@ python3 -m http.server 4273
 
 ```text
 http://localhost:4273
+```
+
+本地测试模型接口：
+
+1. 创建 `.dev.vars`，按 `.dev.vars.example` 填入服务端 key。
+2. 运行：
+
+```bash
+/Users/wcg/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node local-server.mjs
+```
+
+3. 访问：
+
+```text
+http://localhost:4274
 ```
 
 麦克风功能需要在浏览器里授权。多数浏览器要求页面运行在 `localhost` 或 HTTPS 环境下。
