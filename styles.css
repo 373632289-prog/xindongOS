@@ -1,0 +1,587 @@
+:root {
+  color-scheme: dark;
+  --bg: #020304;
+  --ink: #f5fbff;
+  --muted: rgba(222, 239, 246, 0.68);
+  --line: rgba(255, 255, 255, 0.14);
+  --panel: rgba(6, 10, 14, 0.66);
+  --hot: #12f7ff;
+  --warm: #ff2fd6;
+  --gold: #ffc247;
+  --lime: #9cff54;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+.shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 620px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 78%, rgba(18, 247, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 74% 22%, rgba(255, 47, 214, 0.11), transparent 32%),
+    #020304;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.topbar {
+  position: absolute;
+  top: 26px;
+  left: 30px;
+  right: 30px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  pointer-events: none;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+h1,
+h2 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(36px, 7vw, 96px);
+  line-height: 0.86;
+  text-shadow: 0 0 28px color-mix(in srgb, var(--hot), transparent 45%);
+}
+
+h2 {
+  font-size: 18px;
+}
+
+.status-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(18px);
+}
+
+.status-strip span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.status-strip strong {
+  color: var(--hot);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.control-panel {
+  position: absolute;
+  top: 132px;
+  right: 28px;
+  z-index: 4;
+  width: min(360px, calc(100vw - 48px));
+  max-height: calc(100vh - 156px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  backdrop-filter: blur(24px) saturate(130%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.stage-mode-button {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 8;
+  min-height: 36px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 30px;
+  margin: -6px -6px 14px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(245, 251, 255, 0.58);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: grab;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle span,
+.drag-handle small {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.stage-mode .topbar,
+.stage-mode .control-panel,
+.stage-mode .hud {
+  display: none;
+}
+
+.stage-mode .stage-mode-button {
+  opacity: 0.44;
+}
+
+.stage-mode .stage-mode-button:hover {
+  opacity: 1;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.primary-button,
+.preset {
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.primary-button.active {
+  border-color: color-mix(in srgb, var(--hot), white 10%);
+  background: color-mix(in srgb, var(--hot), transparent 78%);
+}
+
+.icon {
+  color: var(--hot);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.preset-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.style-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.preset,
+.style-chip {
+  min-height: 34px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.style-chip {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  color: rgba(245, 251, 255, 0.72);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.preset.active,
+.style-chip.active {
+  color: #001115;
+  border-color: var(--hot);
+  background: var(--hot);
+}
+
+.prompt-box,
+.live-code-box,
+.image-source-box,
+.camera-source-box,
+.template-box {
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.prompt-box label,
+.live-code-box label,
+.image-source-box label,
+.camera-source-box label,
+.template-box label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.prompt-box textarea,
+.live-code-box textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 0;
+  padding: 10px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.26);
+  outline: none;
+}
+
+.template-box input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 0;
+  padding: 0 10px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.26);
+  outline: none;
+}
+
+.template-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.layer-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.template-item,
+.layer-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.layer-item {
+  grid-template-columns: 1fr auto;
+}
+
+.template-title,
+.layer-title {
+  overflow: hidden;
+  color: rgba(245, 251, 255, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.danger-button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 74, 104, 0.35);
+  color: #ff879a;
+  background: rgba(255, 74, 104, 0.08);
+  cursor: pointer;
+}
+
+.live-code-box textarea {
+  min-height: 92px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.prompt-box textarea:focus,
+.live-code-box textarea:focus {
+  border-color: color-mix(in srgb, var(--hot), white 18%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--hot), transparent 78%);
+}
+
+.code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mini-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.055);
+  cursor: pointer;
+}
+
+.file-control {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 2px 0 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.055);
+  cursor: pointer;
+}
+
+.image-preview {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 10px;
+  align-items: center;
+  min-height: 72px;
+}
+
+#imagePreview {
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+#cameraVideo {
+  display: none;
+}
+
+#cameraPreview {
+  width: 100%;
+  height: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.image-swatches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.image-swatches span {
+  display: block;
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.mini-button:hover,
+.primary-button:hover,
+.preset:hover,
+.style-chip:hover,
+.swatch:hover,
+.file-control:hover {
+  border-color: color-mix(in srgb, var(--hot), white 10%);
+}
+
+.prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.model-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.model-toggle input {
+  accent-color: var(--hot);
+}
+
+.prompt-status {
+  min-height: 16px;
+  margin: 8px 0 0;
+  color: rgba(245, 251, 255, 0.56);
+  font-size: 11px;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--hot);
+}
+
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.swatch {
+  height: 34px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--swatch), rgba(255, 255, 255, 0.16));
+  cursor: pointer;
+}
+
+.swatch.active {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.hud {
+  position: absolute;
+  left: 30px;
+  right: 30px;
+  bottom: 24px;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(160px, 280px) minmax(160px, 280px) 96px;
+  align-items: end;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.hud > div {
+  min-height: 54px;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+}
+
+.hud span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+meter {
+  width: 100%;
+  height: 10px;
+}
+
+.readout {
+  text-align: center;
+}
+
+.readout span {
+  margin: 0;
+  color: var(--hot);
+  font-size: 26px;
+}
+
+.readout small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  html,
+  body {
+    overflow: auto;
+  }
+
+  .shell {
+    min-height: 760px;
+    overflow-y: auto;
+  }
+
+  .topbar {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    padding: 22px;
+    flex-direction: column;
+  }
+
+  .control-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin: 28px 18px 0;
+    width: auto;
+  }
+
+  .hud {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    grid-template-columns: 1fr;
+    margin: 18px;
+  }
+}

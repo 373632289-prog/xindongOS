@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>xindongOS - Emotion Music Visualizer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <canvas id="stage" aria-label="xindongOS electronic music visualizer"></canvas>
+      <button id="stageModeButton" class="stage-mode-button" type="button">演出模式</button>
+
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">REALTIME EMOTION SYNTH</p>
+          <h1>xindongOS</h1>
+        </div>
+        <div class="status-strip" aria-live="polite">
+          <span id="audioState">internal pulse</span>
+          <strong id="emotionLabel">CALM</strong>
+        </div>
+      </header>
+
+      <section class="control-panel" aria-label="visual controls">
+        <div id="dragHandle" class="drag-handle" title="拖拽移动编辑面板">
+          <span>EDITOR</span>
+          <small>拖拽移动</small>
+        </div>
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">CONTROL SURFACE</p>
+            <h2>画面微调</h2>
+          </div>
+          <button id="micButton" class="primary-button" type="button">
+            <span class="icon">◉</span>
+            开启麦克风
+          </button>
+        </div>
+
+        <div class="preset-row" role="group" aria-label="visual presets">
+          <button class="preset active" data-preset="neon" type="button">NEON</button>
+          <button class="preset" data-preset="liquid" type="button">LIQUID</button>
+          <button class="preset" data-preset="storm" type="button">STORM</button>
+          <button class="preset" data-preset="aether" type="button">AETHER</button>
+          <button class="preset" data-preset="silk" type="button">SILK</button>
+          <button class="preset" data-preset="ritual" type="button">RITUAL</button>
+        </div>
+
+        <div class="style-row" role="group" aria-label="visual material">
+          <button class="style-chip active" data-style="harmonic" type="button">谐波</button>
+          <button class="style-chip" data-style="aura" type="button">空灵</button>
+          <button class="style-chip" data-style="silk" type="button">丝绸</button>
+          <button class="style-chip" data-style="crystal" type="button">晶体</button>
+          <button class="style-chip" data-style="pulse" type="button">律动</button>
+          <button class="style-chip" data-style="veil" type="button">薄雾</button>
+        </div>
+
+        <div class="prompt-box">
+          <label for="visualPrompt">自然语言编辑</label>
+          <textarea id="visualPrompt" rows="3" placeholder="例如：更空灵一点，像水晶雾气，节奏慢一点，颜色偏冷，粒子更细。"></textarea>
+          <div class="prompt-actions">
+            <label class="model-toggle">
+              <input id="modelMode" type="checkbox" />
+              <span>接模型</span>
+            </label>
+            <button id="promptButton" class="primary-button" type="button">
+              <span class="icon">↳</span>
+              生成画面
+            </button>
+          </div>
+          <p id="promptStatus" class="prompt-status">local visual parser ready</p>
+        </div>
+
+        <div class="live-code-box">
+          <div class="code-head">
+            <label for="hydraCode">代码编辑器 / AI VJ 配方</label>
+            <button id="exampleButton" class="mini-button" type="button">换一个酷效果</button>
+          </div>
+          <textarea id="hydraCode" rows="4" spellcheck="false">osc(18).kaleid(6).aura().color("aether").glow(92).speed(38).out()</textarea>
+          <div class="prompt-actions">
+            <button id="codeRunButton" class="primary-button" type="button">
+              <span class="icon">▶</span>
+              运行代码
+            </button>
+            <button id="codeAiButton" class="mini-button" type="button">按描述生成</button>
+          </div>
+          <div class="prompt-actions">
+            <button id="addLayerButton" class="mini-button" type="button">叠加当前效果</button>
+            <button id="clearLayersButton" class="mini-button" type="button">清空叠加</button>
+          </div>
+          <div id="layerList" class="layer-list" aria-live="polite"></div>
+          <p id="codeStatus" class="prompt-status">支持 blend / modulate / 多效果叠加</p>
+        </div>
+
+        <div class="image-source-box">
+          <div class="code-head">
+            <label for="imageInput">图片视觉源</label>
+            <button id="imageCodeButton" class="mini-button" type="button">写成代码</button>
+          </div>
+          <label class="file-control" for="imageInput">
+            <span class="icon">◎</span>
+            上传图片
+            <input id="imageInput" type="file" accept="image/*" />
+          </label>
+          <div class="image-preview" aria-hidden="true">
+            <canvas id="imagePreview"></canvas>
+            <div id="imageSwatches" class="image-swatches"></div>
+          </div>
+          <p id="imageStatus" class="prompt-status">image source empty</p>
+        </div>
+
+        <div class="camera-source-box">
+          <div class="code-head">
+            <label for="cameraPreview">摄像头轮廓源</label>
+            <button id="cameraButton" class="mini-button" type="button">开启摄像头</button>
+          </div>
+          <video id="cameraVideo" playsinline muted></video>
+          <canvas id="cameraPreview" aria-label="camera contour preview"></canvas>
+          <p id="cameraStatus" class="prompt-status">camera contour empty</p>
+        </div>
+
+        <div class="template-box">
+          <div class="code-head">
+            <label for="templateName">效果模板</label>
+            <button id="saveTemplateButton" class="mini-button" type="button">保存当前</button>
+          </div>
+          <input id="templateName" type="text" placeholder="模板名称，例如：空灵水晶开场" />
+          <div id="templateList" class="template-list" aria-live="polite"></div>
+          <p id="templateStatus" class="prompt-status">templates saved in this browser</p>
+        </div>
+
+        <label class="field">
+          <span>复杂度</span>
+          <input id="complexity" type="range" min="2" max="12" step="1" value="7" />
+        </label>
+        <label class="field">
+          <span>流动速度</span>
+          <input id="speed" type="range" min="10" max="140" step="1" value="68" />
+        </label>
+        <label class="field">
+          <span>霓虹强度</span>
+          <input id="glow" type="range" min="15" max="100" step="1" value="70" />
+        </label>
+        <label class="field">
+          <span>粒子密度</span>
+          <input id="density" type="range" min="80" max="520" step="10" value="310" />
+        </label>
+        <label class="field">
+          <span>情绪敏感度</span>
+          <input id="sensitivity" type="range" min="20" max="180" step="1" value="92" />
+        </label>
+
+        <div class="color-grid" aria-label="color theme">
+          <button class="swatch active" data-theme="cyan" style="--swatch: #12f7ff" aria-label="cyan theme"></button>
+          <button class="swatch" data-theme="magenta" style="--swatch: #ff2fd6" aria-label="magenta theme"></button>
+          <button class="swatch" data-theme="amber" style="--swatch: #ffc247" aria-label="amber theme"></button>
+          <button class="swatch" data-theme="lime" style="--swatch: #9cff54" aria-label="lime theme"></button>
+          <button class="swatch" data-theme="aether" style="--swatch: #b8f7ff" aria-label="aether theme"></button>
+          <button class="swatch" data-theme="violet" style="--swatch: #9b7cff" aria-label="violet theme"></button>
+        </div>
+      </section>
+
+      <section class="hud">
+        <div>
+          <span>ENERGY</span>
+          <meter id="energyMeter" min="0" max="100" value="24"></meter>
+        </div>
+        <div>
+          <span>VALENCE</span>
+          <meter id="valenceMeter" min="0" max="100" value="55"></meter>
+        </div>
+        <div class="readout">
+          <span id="bpmValue">128</span>
+          <small>BPM SIM</small>
+        </div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
