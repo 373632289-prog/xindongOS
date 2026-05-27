@@ -467,7 +467,39 @@ function codeFromIntent(intent) {
   const modulate = intent.modulate || (style === "pulse" ? "noise" : "pulse");
   const blendAmount = intent.blendAmount || (intent.speed > 100 ? 0.52 : 0.34);
   const modulateAmount = intent.modulateAmount || (intent.speed > 100 ? 0.42 : 0.24);
-  return `${source}(${seed}).${style}().color("${intent.theme || "cyan"}").kaleid(${kaleid}).rotate(${rotate}).contrast(${contrast}).glow(${intent.glow || 82}).speed(${intent.speed || 76}).density(${intent.density || 320}).blend("${blend}", ${blendAmount}).modulate("${modulate}", ${modulateAmount}).out()`;
+  const themeColor = {
+    cyan: "0.1, 0.9, 1.0",
+    magenta: "1.0, 0.18, 0.82",
+    amber: "1.0, 0.58, 0.12",
+    lime: "0.55, 1.0, 0.22",
+    aether: "0.72, 0.92, 1.0",
+    violet: "0.55, 0.35, 1.0",
+  }[intent.theme || "cyan"] || "0.1, 0.9, 1.0";
+  const oscFreq = Math.max(8, seed);
+  const motion = Math.max(0.015, Math.min(0.16, (intent.speed || 76) / 900));
+  const nativeByStyle = {
+    aura: `gradient(1).hue(() => time * ${motion.toFixed(3)}).modulate(osc(${oscFreq}, 0.04), ${modulateAmount}).blend(noise(2).colorama(0.22), ${blendAmount}).color(${themeColor}).out()`,
+    silk: `osc(${oscFreq}, 0.035, 0.75).rotate(() => time * ${rotate}).modulate(noise(3), ${modulateAmount}).blend(gradient(1).hue(() => time * 0.04), ${blendAmount}).color(${themeColor}).out()`,
+    crystal: `shape(5, 0.32, 0.02).repeat(${Math.max(2, Math.round(kaleid / 2))}, ${Math.max(2, Math.round(kaleid / 2))}).kaleid(${kaleid}).rotate(() => time * ${motion.toFixed(3)}).modulate(voronoi(${Math.max(4, Math.round(kaleid))}, 0.35), ${modulateAmount}).color(${themeColor}).out()`,
+    pulse: `osc(${oscFreq + 10}, 0.03, 0.9).kaleid(${kaleid}).modulateRotate(shape(4).repeat(5, 5), ${modulateAmount}).diff(noise(3).posterize(4)).color(${themeColor}).out()`,
+    veil: `noise(${Math.max(2, Math.round(kaleid / 2))}, 0.24).colorama(0.28).posterize(5, 0.55).modulate(osc(${oscFreq}, 0.06), ${modulateAmount}).color(${themeColor}).out()`,
+    harmonic: `osc(${oscFreq}, 0.08, ${contrast}).kaleid(${kaleid}).rotate(() => time * ${motion.toFixed(3)}).modulate(noise(3), ${modulateAmount}).blend(osc(${oscFreq / 2}).color(${themeColor}), ${blendAmount}).out()`,
+  };
+  return nativeByStyle[style] || nativeByStyle.harmonic;
+}
+
+function applyGeneratedVisual(intent, statusTarget = promptStatus) {
+  intent.custom = true;
+  const code = codeFromIntent(intent);
+  hydraCode.value = code;
+  try {
+    runHydraCode(code);
+    codeStatus.textContent = "已生成并运行真实 Hydra 画面";
+  } catch (error) {
+    applyIntent(intent);
+    codeStatus.textContent = "Hydra 运行失败，已用 xindongOS 渲染";
+  }
+  statusTarget.textContent = intent.summary || "画面已生成";
 }
 
 function colorDistance(a, b) {
@@ -1427,17 +1459,10 @@ promptButton.addEventListener("click", async () => {
   promptStatus.textContent = modelMode.checked ? "asking model..." : "parsing locally...";
   try {
     const intent = modelMode.checked ? await requestModelIntent(text) : parseNaturalVisual(text);
-    intent.custom = true;
-    applyIntent(intent);
-    hydraCode.value = codeFromIntent(intent);
-    codeStatus.textContent = "已自动生成 VJ 配方";
-    promptStatus.textContent = intent.summary || "visual updated";
+    applyGeneratedVisual(intent, promptStatus);
   } catch (error) {
     const intent = parseNaturalVisual(text);
-    intent.custom = true;
-    applyIntent(intent);
-    hydraCode.value = codeFromIntent(intent);
-    codeStatus.textContent = "已自动生成本地 VJ 配方";
+    applyGeneratedVisual(intent, promptStatus);
     promptStatus.textContent = `${error.message}，已用本地解析`;
   }
 });
@@ -1466,12 +1491,11 @@ codeAiButton.addEventListener("click", async () => {
   promptStatus.textContent = modelMode.checked ? "asking model..." : "用本地语义生成代码";
   try {
     const intent = modelMode.checked ? await requestModelIntent(text) : parseNaturalVisual(text);
-    intent.custom = true;
-    applyIntent(intent);
-    hydraCode.value = codeFromIntent(intent);
-    promptStatus.textContent = "已生成 Hydra 风格代码";
+    applyGeneratedVisual(intent, promptStatus);
   } catch (error) {
-    promptStatus.textContent = `${error.message}，请先配置模型接口`;
+    const intent = parseNaturalVisual(text);
+    applyGeneratedVisual(intent, promptStatus);
+    promptStatus.textContent = `${error.message}，已用本地生成`;
   }
 });
 

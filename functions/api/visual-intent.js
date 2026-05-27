@@ -7,6 +7,10 @@ speed: integer 10-140
 glow: integer 15-100
 density: integer 80-520
 sensitivity: integer 20-180
+blend: one of crystal, pulse, veil, aura, silk, harmonic
+blendAmount: number 0-1
+modulate: one of noise, pulse, crystal, veil
+modulateAmount: number 0-1
 summary: short Chinese phrase under 24 characters.`;
 
 function clamp(value, min, max) {
@@ -26,6 +30,10 @@ function normalizeIntent(intent) {
     glow: clamp(intent.glow, 15, 100),
     density: clamp(intent.density, 80, 520),
     sensitivity: clamp(intent.sensitivity, 20, 180),
+    blend: styles.has(intent.blend) ? intent.blend : "crystal",
+    blendAmount: Math.max(0, Math.min(1, Number(intent.blendAmount) || 0.34)),
+    modulate: new Set(["noise", "pulse", "crystal", "veil"]).has(intent.modulate) ? intent.modulate : "pulse",
+    modulateAmount: Math.max(0, Math.min(1, Number(intent.modulateAmount) || 0.28)),
     summary: String(intent.summary || "视觉已生成").slice(0, 24),
   };
 }
