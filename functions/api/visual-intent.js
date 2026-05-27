@@ -39,6 +39,68 @@ function extractJson(text) {
   return JSON.parse(text.slice(start, end + 1));
 }
 
+function googleGenerateUrl(env) {
+  const endpoint = (env.MODEL_API_URL || "https://generativelanguage.googleapis.com/v1beta").replace(/\/$/, "");
+  const model = encodeURIComponent(env.MODEL_NAME || "gemini-2.0-flash");
+  return `${endpoint}/models/${model}:generateContent`;
+}
+
+async function callGoogleModel(prompt, env) {
+  const response = await fetch(googleGenerateUrl(env), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": env.MODEL_API_KEY,
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `${SYSTEM_PROMPT}\n\nUser direction:\n${prompt}` }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.35,
+        responseMimeType: "application/json",
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Google model request failed: ${response.status} ${detail.slice(0, 160)}`);
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
+}
+
+async function callOpenAICompatibleModel(prompt, env) {
+  const response = await fetch(env.MODEL_API_URL, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${env.MODEL_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: env.MODEL_NAME || "gpt-4o-mini",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.35,
+    }),
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`OpenAI-compatible model request failed: ${response.status} ${detail.slice(0, 160)}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || data.output_text || "";
+}
+
 export async function onRequestPost({ request, env }) {
   try {
     const { prompt } = await request.json();
@@ -50,28 +112,10 @@ export async function onRequestPost({ request, env }) {
       return Response.json({ error: "MODEL_API_URL and MODEL_API_KEY are not configured" }, { status: 501 });
     }
 
-    const response = await fetch(env.MODEL_API_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.MODEL_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: env.MODEL_NAME || "gpt-4o-mini",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.35,
-      }),
-    });
-
-    if (!response.ok) {
-      return Response.json({ error: "Model request failed" }, { status: 502 });
-    }
-
-    const data = await response.json();
-    const text = data.choices?.[0]?.message?.content || data.output_text || "";
+    const provider = (env.MODEL_PROVIDER || "openai").toLowerCase();
+    const text = provider === "google" || provider === "gemini"
+      ? await callGoogleModel(prompt, env)
+      : await callOpenAICompatibleModel(prompt, env);
     return Response.json({ intent: normalizeIntent(extractJson(text)) });
   } catch (error) {
     return Response.json({ error: error.message || "Visual intent failed" }, { status: 500 });

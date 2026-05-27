@@ -48,12 +48,33 @@ window.postMessage({
 
 ## 模型接口
 
-部署到 Cloudflare Pages 后，在环境变量里配置：
+部署到 Cloudflare Pages 后，如果用 OpenAI 兼容接口，在环境变量里配置：
 
 ```text
+MODEL_PROVIDER=openai
 MODEL_API_URL=https://api.openai.com/v1/chat/completions
 MODEL_API_KEY=你的服务端密钥
 MODEL_NAME=gpt-4o-mini
+```
+
+如果用 Google Generative AI 兼容接口，例如：
+
+```python
+genai.configure(
+    api_key="sk-你的tenant-key",
+    transport="rest",
+    client_options={"api_endpoint": "https://agentllm.linkyun.co/v1beta/google"}
+)
+model = genai.GenerativeModel("nano-banana-pro-preview")
+```
+
+对应的 Cloudflare Pages 环境变量是：
+
+```text
+MODEL_PROVIDER=google
+MODEL_API_URL=https://agentllm.linkyun.co/v1beta/google
+MODEL_API_KEY=sk-你的tenant-key
+MODEL_NAME=nano-banana-pro-preview
 ```
 
 浏览器不会直接看到 `MODEL_API_KEY`。
