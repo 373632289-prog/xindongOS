@@ -109,3 +109,30 @@ http://localhost:4274
 ```
 
 麦克风功能需要在浏览器里授权。多数浏览器要求页面运行在 `localhost` 或 HTTPS 环境下。
+
+## 云服务器部署
+
+普通云服务器可以直接运行内置 Node 服务：
+
+```bash
+MODEL_PROVIDER=google \
+MODEL_API_URL=https://agentllm.linkyun.co/v1beta/google \
+MODEL_API_KEY=你的服务端密钥 \
+MODEL_NAME=nano-banana-pro-preview \
+PORT=8080 \
+node local-server.mjs
+```
+
+也可以用 Docker：
+
+```bash
+docker build -t xindongos .
+docker run -d --name xindongos -p 8080:8080 \
+  -e MODEL_PROVIDER=google \
+  -e MODEL_API_URL=https://agentllm.linkyun.co/v1beta/google \
+  -e MODEL_API_KEY=你的服务端密钥 \
+  -e MODEL_NAME=nano-banana-pro-preview \
+  xindongos
+```
+
+摄像头和麦克风在公网访问时通常需要 HTTPS；生产环境建议用 Nginx/Caddy 反向代理并配置 TLS。
